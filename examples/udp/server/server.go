@@ -34,7 +34,6 @@ func server(strUrl string) {
 }
 
 func (s *Server) OnAccept(c *socketx.SocketClient) {
-	//log.Infof("connection accepted [%v]", c.GetRemoteAddr())
 }
 
 func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
@@ -47,5 +46,4 @@ func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, fro
 }
 
 func (s *Server) OnClose(c *socketx.SocketClient) {
-	//log.Infof("connection [%v] closed", c.GetRemoteAddr())
 }

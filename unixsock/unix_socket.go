@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/civet148/gotools/parser"
 	"github.com/civet148/log"
-	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
+	"github.com/civet148/socketx/types"
 	"net"
 	"os"
 	"strings"
@@ -18,10 +19,10 @@ type socket struct {
 }
 
 func init() {
-	_ = socketx.Register(socketx.SocketType_UNIX, NewSocket)
+	_ = api.Register(types.SocketType_UNIX, NewSocket)
 }
 
-func NewSocket(ui *parser.UrlInfo) socketx.Socket {
+func NewSocket(ui *parser.UrlInfo) api.Socket {
 
 	return &socket{
 		ui: ui,
@@ -50,7 +51,7 @@ func (s *socket) Listen() (err error) {
 	return
 }
 
-func (s *socket) Accept() socketx.Socket {
+func (s *socket) Accept() api.Socket {
 	conn, err := s.listener.Accept()
 	if err != nil {
 		return nil
@@ -90,7 +91,7 @@ func (s *socket) Recv(length int) (data []byte, from string, err error) {
 	var recv, left int
 	if length <= 0 {
 		once = true
-		length = socketx.PACK_FRAGMENT_MAX
+		length = types.PACK_FRAGMENT_MAX
 	}
 	left = length
 	data = s.makeBuffer(length)
@@ -142,8 +143,8 @@ func (s *socket) GetRemoteAddr() (strAddr string) {
 	return s.getUnixSockFile()
 }
 
-func (s *socket) GetSocketType() socketx.SocketType {
-	return socketx.SocketType_UNIX
+func (s *socket) GetSocketType() types.SocketType {
+	return types.SocketType_UNIX
 }
 
 func (s *socket) getUnixSockFile() (strSockFile string) {
@@ -159,7 +160,7 @@ func (s *socket) getUnixSockFile() (strSockFile string) {
 }
 
 func (s *socket) getNetwork() string {
-	return socketx.NETWORK_UNIX
+	return types.NETWORK_UNIX
 }
 
 func (s *socket) makeBuffer(length int) []byte {

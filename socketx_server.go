@@ -2,19 +2,29 @@ package socketx
 
 import (
 	"fmt"
+	"github.com/civet148/gotools/parser"
 	"github.com/civet148/log"
+	"github.com/civet148/socketx/api"
+	"github.com/civet148/socketx/types"
+	"strings"
 	"sync"
 )
 
+type SocketHandler interface {
+	OnAccept(c *SocketClient)
+	OnReceive(c *SocketClient, data []byte, length int, from string)
+	OnClose(c *SocketClient)
+}
+
 type SocketServer struct {
-	url       string                   //web socket url
-	sock      Socket                   //server socket
-	handler   SocketHandler            //server callback handler
-	accepting chan Socket              //client connection accepted
-	receiving chan Socket              //client message received
-	quiting   chan Socket              //client connection closed
-	clients   map[Socket]*SocketClient //socket clients
-	locker    *sync.Mutex              //locker mutex
+	url       string                       //web socket url
+	sock      api.Socket                   //server socket
+	handler   SocketHandler                //server callback handler
+	accepting chan api.Socket              //client connection accepted
+	receiving chan api.Socket              //client message received
+	quiting   chan api.Socket              //client connection closed
+	clients   map[api.Socket]*SocketClient //socket clients
+	locker    *sync.Mutex                  //locker mutex
 }
 
 func init() {
@@ -23,22 +33,22 @@ func init() {
 
 func NewServer(url string) *SocketServer {
 
-	var s Socket
-	s = createSocket(url)
+	var s api.Socket
+	s = CreateSocket(url)
 
 	return &SocketServer{
 		url:       url,
 		locker:    &sync.Mutex{},
 		sock:      s,
-		accepting: make(chan Socket, 1000),
-		quiting:   make(chan Socket, 1000),
-		clients:   make(map[Socket]*SocketClient, 0),
+		accepting: make(chan api.Socket, 1000),
+		quiting:   make(chan api.Socket, 1000),
+		clients:   make(map[api.Socket]*SocketClient, 0),
 	}
 }
 
-//TCP       => 		tcp://127.0.0.1:6666
-//UDP       => 		udp://127.0.0.1:6667
-//WebSocket => 		ws://127.0.0.1:6668/ wss://127.0.0.1:6668/websocket?cert=cert.pem&key=key.pem
+// TCP       => 		tcp://127.0.0.1:6666
+// UDP       => 		udp://127.0.0.1:6667
+// WebSocket => 		ws://127.0.0.1:6668/ wss://127.0.0.1:6668/websocket?cert=cert.pem&key=key.pem
 func (w *SocketServer) Listen(handler SocketHandler) (err error) {
 	w.handler = handler
 	if err = w.sock.Listen(); err != nil {
@@ -46,7 +56,7 @@ func (w *SocketServer) Listen(handler SocketHandler) (err error) {
 		return
 	}
 	log.Debugf("listen protocol [%v] address [%v] ok", w.sock.GetSocketType(), w.sock.GetLocalAddr())
-	if w.sock.GetSocketType() != SocketType_UDP {
+	if w.sock.GetSocketType() != types.SocketType_UDP {
 		go func() {
 			log.Debugf("start goroutine for channel event accepting/quiting")
 			for {
@@ -96,7 +106,7 @@ func (w *SocketServer) GetClientAll() (clients []*SocketClient) {
 	return w.getClientAll()
 }
 
-func (w *SocketServer) closeSocket(s Socket) (err error) {
+func (w *SocketServer) closeSocket(s api.Socket) (err error) {
 	if s == nil {
 		return fmt.Errorf("close socket is nil")
 	}
@@ -104,7 +114,7 @@ func (w *SocketServer) closeSocket(s Socket) (err error) {
 	return s.Close()
 }
 
-func (w *SocketServer) sendSocket(s Socket, data []byte, to ...string) (n int, err error) {
+func (w *SocketServer) sendSocket(s api.Socket, data []byte, to ...string) (n int, err error) {
 	if s == nil || len(data) == 0 {
 		err = fmt.Errorf("send socket is nil or data length is 0")
 		return
@@ -112,7 +122,7 @@ func (w *SocketServer) sendSocket(s Socket, data []byte, to ...string) (n int, e
 	return s.Send(data, to...)
 }
 
-func (w *SocketServer) recvSocket(s Socket) (data []byte, from string, err error) {
+func (w *SocketServer) recvSocket(s api.Socket) (data []byte, from string, err error) {
 	if s == nil {
 		err = fmt.Errorf("send socket is nil")
 		return
@@ -120,22 +130,22 @@ func (w *SocketServer) recvSocket(s Socket) (data []byte, from string, err error
 	return s.Recv(-1)
 }
 
-func (w *SocketServer) onAccept(s Socket) {
+func (w *SocketServer) onAccept(s api.Socket) {
 	c := w.addClient(s)
 	go w.readSocket(s)
 	w.handler.OnAccept(c)
 }
 
-func (w *SocketServer) onClose(s Socket) {
+func (w *SocketServer) onClose(s api.Socket) {
 	w.handler.OnClose(w.removeClient(s))
 }
 
-func (w *SocketServer) onReceive(s Socket, data []byte, length int, from string) {
+func (w *SocketServer) onReceive(s api.Socket, data []byte, length int, from string) {
 	c := w.getClient(s)
 	w.handler.OnReceive(c, data, length, from)
 }
 
-func (w *SocketServer) readSocket(s Socket) {
+func (w *SocketServer) readSocket(s api.Socket) {
 	for {
 		if data, from, err := w.recvSocket(s); err != nil {
 			w.quiting <- s
@@ -163,7 +173,7 @@ func (w *SocketServer) closeClientAll() {
 	}
 }
 
-func (w *SocketServer) addClient(s Socket) (client *SocketClient) {
+func (w *SocketServer) addClient(s api.Socket) (client *SocketClient) {
 	client = &SocketClient{
 		sock: s,
 	}
@@ -173,7 +183,7 @@ func (w *SocketServer) addClient(s Socket) (client *SocketClient) {
 	return client
 }
 
-func (w *SocketServer) removeClient(s Socket) (client *SocketClient) {
+func (w *SocketServer) removeClient(s api.Socket) (client *SocketClient) {
 	w.lock()
 	defer w.unlock()
 	client = w.clients[s]
@@ -181,7 +191,7 @@ func (w *SocketServer) removeClient(s Socket) (client *SocketClient) {
 	return
 }
 
-func (w *SocketServer) getClient(s Socket) (client *SocketClient) {
+func (w *SocketServer) getClient(s api.Socket) (client *SocketClient) {
 	var ok bool
 	w.lock()
 	defer w.unlock()
@@ -202,6 +212,29 @@ func (w *SocketServer) getClientAll() (clients []*SocketClient) {
 	defer w.unlock()
 	for _, v := range w.clients {
 		clients = append(clients, v)
+	}
+	return
+}
+
+func CreateSocket(url string) (s api.Socket) {
+
+	url = strings.ToLower(url)
+	ui := parser.ParseUrl(url)
+	switch ui.Scheme {
+	case types.URL_SCHEME_TCP, types.URL_SCHEME_TCP4, types.URL_SCHEME_TCP6:
+		s = api.NewSocketInstance(types.SocketType_TCP, ui)
+	case types.URL_SCHEME_WS, types.URL_SCHEME_WSS:
+		s = api.NewSocketInstance(types.SocketType_WEB, ui)
+	case types.URL_SCHEME_UDP, types.URL_SCHEME_UDP4, types.URL_SCHEME_UDP6:
+		s = api.NewSocketInstance(types.SocketType_UDP, ui)
+	case types.URL_SCHEME_UNIX:
+		s = api.NewSocketInstance(types.SocketType_UNIX, ui)
+	default:
+		{
+			url = types.URL_SCHEME_TCP + parser.URL_SCHEME_SEP + url
+			ui = parser.ParseUrl(url)
+			s = api.NewSocketInstance(types.SocketType_TCP, ui) //default 'tcp'
+		}
 	}
 	return
 }

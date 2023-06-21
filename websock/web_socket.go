@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"github.com/civet148/gotools/parser"
 	"github.com/civet148/log"
-	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
+	"github.com/civet148/socketx/types"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"net/http"
+	"sync"
 )
 
 type socket struct {
@@ -16,13 +18,14 @@ type socket struct {
 	conn      *websocket.Conn
 	accepting chan *websocket.Conn
 	closed    bool
+	locker    sync.RWMutex
 }
 
 func init() {
-	_ = socketx.Register(socketx.SocketType_WEB, NewSocket)
+	_ = api.Register(types.SocketType_WEB, NewSocket)
 }
 
-func NewSocket(ui *parser.UrlInfo) socketx.Socket {
+func NewSocket(ui *parser.UrlInfo) api.Socket {
 	return &socket{
 		ui:        ui,
 		accepting: make(chan *websocket.Conn, 1000),
@@ -36,11 +39,11 @@ func (s *socket) Listen() (err error) {
 	}
 
 	engine.GET(s.ui.Path, s.webSocketRegister)
-	strCertFile := s.ui.Queries[socketx.WSS_TLS_CERT]
-	strKeyFile := s.ui.Queries[socketx.WSS_TLS_KEY]
+	strCertFile := s.ui.Queries[types.WSS_TLS_CERT]
+	strKeyFile := s.ui.Queries[types.WSS_TLS_KEY]
 
 	go func() {
-		if s.ui.Scheme == socketx.URL_SCHEME_WSS {
+		if s.ui.Scheme == types.URL_SCHEME_WSS {
 			log.Debugf("listen GET [%s://%s%s] -> cert [%s] key [%s]", s.ui.Scheme, s.ui.Host, s.ui.Path, strCertFile, strKeyFile)
 			err = engine.RunTLS(s.ui.Host, strCertFile, strKeyFile)
 		} else {
@@ -57,7 +60,7 @@ func (s *socket) Listen() (err error) {
 	return
 }
 
-func (s *socket) Accept() socketx.Socket {
+func (s *socket) Accept() api.Socket {
 
 	var c *websocket.Conn
 	select {
@@ -80,7 +83,7 @@ func (s *socket) Connect() (err error) {
 	url := fmt.Sprintf("%v://%v%v", s.ui.Scheme, s.ui.Host, s.ui.Path)
 	log.Debugf("connect to url [%v]", url)
 	dialer := &websocket.Dialer{}
-	if s.ui.Scheme == socketx.URL_SCHEME_WSS {
+	if s.ui.Scheme == types.URL_SCHEME_WSS {
 		dialer.TLSClientConfig = &tls.Config{RootCAs: nil, InsecureSkipVerify: true}
 	}
 	if s.conn, _, err = dialer.Dial(url, nil); err != nil {
@@ -95,7 +98,8 @@ func (s *socket) Send(data []byte, to ...string) (n int, err error) {
 		err = fmt.Errorf("web socket connection is nil")
 		return
 	}
-
+	s.locker.Lock()
+	defer s.locker.Unlock()
 	if err = s.conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 		return
 	}
@@ -109,7 +113,6 @@ func (s *socket) Recv(length int) (data []byte, from string, err error) {
 		err = fmt.Errorf("web socket connection is nil")
 		return
 	}
-
 	var msgType int
 	if msgType, data, err = s.conn.ReadMessage(); err != nil {
 		log.Errorf(err.Error())
@@ -152,8 +155,8 @@ func (s *socket) GetRemoteAddr() (addr string) {
 	return
 }
 
-func (s *socket) GetSocketType() socketx.SocketType {
-	return socketx.SocketType_WEB
+func (s *socket) GetSocketType() types.SocketType {
+	return types.SocketType_WEB
 }
 
 func (s *socket) debugMessageType(msgType int) {

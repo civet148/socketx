@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/civet148/gotools/parser"
 	"github.com/civet148/log"
-	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
+	"github.com/civet148/socketx/types"
 	"net"
 	"strings"
 )
@@ -16,10 +17,10 @@ type socket struct {
 }
 
 func init() {
-	_ = socketx.Register(socketx.SocketType_UDP, NewSocket)
+	_ = api.Register(types.SocketType_UDP, NewSocket)
 }
 
-func NewSocket(ui *parser.UrlInfo) socketx.Socket {
+func NewSocket(ui *parser.UrlInfo) api.Socket {
 
 	return &socket{
 		ui: ui,
@@ -44,7 +45,7 @@ func (s *socket) Listen() (err error) {
 	return
 }
 
-func (s *socket) Accept() socketx.Socket {
+func (s *socket) Accept() api.Socket {
 	log.Warnf("accept method not for UDP socket")
 	return nil
 }
@@ -79,7 +80,7 @@ func (s *socket) Send(data []byte, to ...string) (n int, err error) {
 func (s *socket) Recv(length int) (data []byte, from string, err error) {
 	var n int
 	var udpAddr *net.UDPAddr
-	data = s.makeBuffer(socketx.PACK_FRAGMENT_MAX)
+	data = s.makeBuffer(types.PACK_FRAGMENT_MAX)
 	if n, udpAddr, err = s.conn.ReadFromUDP(data); err != nil {
 		log.Errorf("read from UDP error [%v]", err.Error())
 		return
@@ -109,20 +110,20 @@ func (s *socket) GetRemoteAddr() (addr string) {
 	return
 }
 
-func (s *socket) GetSocketType() socketx.SocketType {
-	return socketx.SocketType_UDP
+func (s *socket) GetSocketType() types.SocketType {
+	return types.SocketType_UDP
 }
 
 func (s *socket) getNetwork() string {
 	if s.isUDP6() {
-		return socketx.NETWORK_UDPv6
+		return types.NETWORK_UDPv6
 	}
-	return socketx.NETWORK_UDPv4
+	return types.NETWORK_UDPv4
 }
 
 func (s *socket) isUDP6() (ok bool) {
 	scheme := s.ui.GetScheme()
-	if scheme == socketx.URL_SCHEME_UDP6 {
+	if scheme == types.URL_SCHEME_UDP6 {
 		return true
 	}
 	return

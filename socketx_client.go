@@ -1,9 +1,16 @@
 package socketx
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/civet148/socketx/api"
+	_ "github.com/civet148/socketx/tcpsock"  //register TCP instance
+	_ "github.com/civet148/socketx/udpsock"  //register UDP instance
+	_ "github.com/civet148/socketx/unixsock" //register UNIX instance
+	_ "github.com/civet148/socketx/websock"  //register WEBSOCKET instance
+)
 
 type SocketClient struct {
-	sock   Socket
+	sock   api.Socket
 	closed bool
 }
 
@@ -18,8 +25,8 @@ func NewClient() *SocketClient {
 // IPv4      => 		tcp://127.0.0.1:6666 [tcp4://127.0.0.1:6666]
 // WebSocket => 		ws://127.0.0.1:6668 [wss://127.0.0.1:6668]
 func (w *SocketClient) Connect(url string) (err error) {
-	var s Socket
-	if s = createSocket(url); s == nil {
+	var s api.Socket
+	if s = CreateSocket(url); s == nil {
 		return fmt.Errorf("create socket by url [%v] failed", url)
 	}
 	w.sock = s
@@ -28,7 +35,7 @@ func (w *SocketClient) Connect(url string) (err error) {
 
 // only for UDP
 func (w *SocketClient) Listen(url string) (err error) {
-	if w.sock = createSocket(url); w.sock == nil {
+	if w.sock = CreateSocket(url); w.sock == nil {
 		return fmt.Errorf("create socket by url [%v] failed", url)
 	}
 	return w.sock.Listen()
@@ -58,10 +65,10 @@ func (w *SocketClient) IsClosed() bool {
 	return w.closed
 }
 
-func (w *SocketClient) send(s Socket, data []byte, to ...string) (n int, err error) {
+func (w *SocketClient) send(s api.Socket, data []byte, to ...string) (n int, err error) {
 	return s.Send(data, to...)
 }
 
-func (w *SocketClient) recv(s Socket, length int) (data []byte, from string, err error) {
+func (w *SocketClient) recv(s api.Socket, length int) (data []byte, from string, err error) {
 	return s.Recv(length)
 }

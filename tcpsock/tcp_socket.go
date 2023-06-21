@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/civet148/gotools/parser"
 	"github.com/civet148/log"
-	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
+	"github.com/civet148/socketx/types"
 	"net"
 )
 
@@ -16,10 +17,10 @@ type socket struct {
 }
 
 func init() {
-	_ = socketx.Register(socketx.SocketType_TCP, NewSocket)
+	_ = api.Register(types.SocketType_TCP, NewSocket)
 }
 
-func NewSocket(ui *parser.UrlInfo) socketx.Socket {
+func NewSocket(ui *parser.UrlInfo) api.Socket {
 
 	return &socket{
 		ui: ui,
@@ -38,7 +39,7 @@ func (s *socket) Listen() (err error) {
 	return
 }
 
-func (s *socket) Accept() socketx.Socket {
+func (s *socket) Accept() api.Socket {
 	conn, err := s.listener.Accept()
 	if err != nil {
 		return nil
@@ -77,7 +78,7 @@ func (s *socket) Recv(length int) (data []byte, from string, err error) {
 	var recv, left int
 	if length <= 0 {
 		once = true
-		length = socketx.PACK_FRAGMENT_MAX
+		length = types.PACK_FRAGMENT_MAX
 	}
 	left = length
 	data = s.makeBuffer(length)
@@ -135,20 +136,20 @@ func (s *socket) GetRemoteAddr() string {
 	return s.conn.RemoteAddr().String()
 }
 
-func (s *socket) GetSocketType() socketx.SocketType {
-	return socketx.SocketType_TCP
+func (s *socket) GetSocketType() types.SocketType {
+	return types.SocketType_TCP
 }
 
 func (s *socket) getNetwork() string {
 	if s.isTcp6() {
-		return socketx.NETWORK_TCPv6
+		return types.NETWORK_TCPv6
 	}
-	return socketx.NETWORK_TCPv4
+	return types.NETWORK_TCPv4
 }
 
 func (s *socket) isTcp6() (ok bool) {
 	scheme := s.ui.GetScheme()
-	if scheme == socketx.URL_SCHEME_TCP6 {
+	if scheme == types.URL_SCHEME_TCP6 {
 		return true
 	}
 	return
