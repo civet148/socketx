@@ -30,12 +30,21 @@ func NewSocket(ui *parser.UrlInfo) api.Socket {
 }
 
 func (s *socket) Listen() (err error) {
+	var fi os.FileInfo
 	var network = s.getNetwork()
 	addr := s.getUnixSockFile()
-	if err = os.Remove(addr); err != nil {
-		log.Errorf("remove file error [%v]", err.Error())
-		return
+	fi, err = os.Stat(addr)
+	if err != nil && !os.IsNotExist(err) {
+		return log.Errorf(err.Error())
 	}
+	if fi.Name() != "" {
+		log.Warnf("address %s already exists, remove it", addr)
+		if err = os.Remove(addr); err != nil {
+			log.Errorf("remove file error [%v]", err.Error())
+			return
+		}
+	}
+
 	var unixAddr *net.UnixAddr
 	unixAddr, err = net.ResolveUnixAddr(network, s.ui.GetPath())
 	if err != nil {
