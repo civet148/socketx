@@ -2,6 +2,7 @@ package socketx
 
 import (
 	"fmt"
+	"github.com/civet148/log"
 	"github.com/civet148/socketx/api"
 	_ "github.com/civet148/socketx/tcpsock"  //register TCP instance
 	_ "github.com/civet148/socketx/udpsock"  //register UDP instance
@@ -15,7 +16,7 @@ type SocketClient struct {
 }
 
 func init() {
-
+	log.SetLevel("info")
 }
 
 func NewClient() *SocketClient {

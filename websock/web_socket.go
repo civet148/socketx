@@ -177,7 +177,7 @@ func (s *socket) debugMessageType(msgType int) {
 
 func (s *socket) webSocketRegister(ctx *gin.Context) {
 	var err error
-	log.Debugf("request ctx [%v]", ctx)
+	//log.Debugf("request ctx [%v]", ctx)
 	upGrader := &websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
@@ -189,7 +189,7 @@ func (s *socket) webSocketRegister(ctx *gin.Context) {
 		log.Errorf(err.Error())
 		return
 	}
-	log.Debugf("client [%v] registered", c.RemoteAddr().String())
+	//log.Debugf("client [%v] registered", c.RemoteAddr().String())
 	s.accepting <- c
 }
 

@@ -7,17 +7,22 @@ import (
 )
 
 const (
+	WEBSOCKET_SERVER_URL = "wss://127.0.0.1:6668/websocket"
+)
+
+const (
 	WEBSOCKET_DATA_PING = "ping"
 	WEBSOCKET_DATA_PONG = "pong"
 )
 
-func main() {
-	client("wss://127.0.0.1:6668/websocket")
+func init() {
+	log.SetLevel("debug")
 }
 
-func client(strUrl string) (err error) {
+func main() {
+	var err error
 	c := socketx.NewClient()
-	if err = c.Connect(strUrl); err != nil {
+	if err = c.Connect(WEBSOCKET_SERVER_URL); err != nil {
 		log.Errorf(err.Error())
 		return
 	}

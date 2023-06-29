@@ -11,12 +11,12 @@ const (
 	TCP_DATA_PONG = "pong"
 )
 
-func main() {
-	var url = "tcp://127.0.0.1:6666"
-	client(url)
+func init() {
+	log.SetLevel("debug")
 }
 
-func client(strUrl string) {
+func main() {
+	var strUrl = "tcp://127.0.0.1:6666"
 	c := socketx.NewClient()
 	if err := c.Connect(strUrl); err != nil {
 		log.Errorf(err.Error())

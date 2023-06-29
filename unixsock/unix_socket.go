@@ -52,7 +52,7 @@ func (s *socket) Listen() (err error) {
 		log.Errorf(err.Error())
 		return
 	}
-	log.Debugf("trying listen [%v] protocol [%v]", addr, s.ui.GetScheme())
+	//log.Debugf("trying listen [%v] protocol [%v]", addr, s.ui.GetScheme())
 	if s.listener, err = net.ListenUnix("unix", unixAddr); err != nil {
 		log.Errorf("listen tcp address [%s] failed", addr)
 		return

@@ -7,18 +7,21 @@ import (
 )
 
 const (
+	UNIX_SOCKET_URL = "unix:///tmp/unix.sock"
+)
+
+const (
 	UNIX_DATA_PING = "ping"
 	UNIX_DATA_PONG = "pong"
 )
 
-func main() {
-	var url = "unix:///tmp/unix.sock"
-	client(url)
+func init() {
+	log.SetLevel("debug")
 }
 
-func client(strUrl string) {
+func main() {
 	c := socketx.NewClient()
-	if err := c.Connect(strUrl); err != nil {
+	if err := c.Connect(UNIX_SOCKET_URL); err != nil {
 		log.Errorf(err.Error())
 		return
 	}

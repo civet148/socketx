@@ -17,7 +17,7 @@ type SocketHandler interface {
 }
 
 type SocketServer struct {
-	url       string                       //web socket url
+	url       string                       //listen url
 	sock      api.Socket                   //server socket
 	handler   SocketHandler                //server callback handler
 	accepting chan api.Socket              //client connection accepted
@@ -25,10 +25,11 @@ type SocketServer struct {
 	quiting   chan api.Socket              //client connection closed
 	clients   map[api.Socket]*SocketClient //socket clients
 	locker    *sync.Mutex                  //locker mutex
+	done      chan bool                    //force close server socket
 }
 
 func init() {
-
+	log.SetLevel("info")
 }
 
 func NewServer(url string) *SocketServer {
@@ -40,6 +41,7 @@ func NewServer(url string) *SocketServer {
 		url:       url,
 		locker:    &sync.Mutex{},
 		sock:      s,
+		done:      make(chan bool),
 		accepting: make(chan api.Socket, 1000),
 		quiting:   make(chan api.Socket, 1000),
 		clients:   make(map[api.Socket]*SocketClient, 0),
@@ -55,10 +57,10 @@ func (w *SocketServer) Listen(handler SocketHandler) (err error) {
 		log.Errorf(err.Error())
 		return
 	}
-	log.Debugf("listen protocol [%v] address [%v] ok", w.sock.GetSocketType(), w.sock.GetLocalAddr())
+	log.Infof("listen [%v] address [%v] ok", w.sock.GetSocketType(), w.sock.GetLocalAddr())
 	if w.sock.GetSocketType() != types.SocketType_UDP {
 		go func() {
-			log.Debugf("start goroutine for channel event accepting/quiting")
+			//log.Tracef("start goroutine for channel event accepting/quiting")
 			for {
 				select {
 				case s := <-w.accepting: //client connection coming...
@@ -72,7 +74,7 @@ func (w *SocketServer) Listen(handler SocketHandler) (err error) {
 
 		//new go routine for accept new connections
 		go func() {
-			log.Debugf("start goroutine for accept new connection")
+			//log.Tracef("start goroutine for accept new connection")
 			for {
 				if s := w.sock.Accept(); s != nil { //socket accepting...
 					w.accepting <- s
@@ -82,10 +84,13 @@ func (w *SocketServer) Listen(handler SocketHandler) (err error) {
 	} else {
 		w.onAccept(w.sock)
 	}
+
+	<-w.done //wait for signal
 	return
 }
 
 func (w *SocketServer) Close() {
+	w.done <- true
 	w.sock.Close()
 	w.closeClientAll()
 }

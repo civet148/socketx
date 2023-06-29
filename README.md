@@ -1,8 +1,8 @@
-# a socket wrapper for TCP/UDP/WEB socket
+# a socket wrapper for TCP/UDP/WEB/UNIX socket
 
-# 1. tcp socket example
+# 1. TCP socket
 
-## 1.1 tcp socket client 
+## 1.1 TCP client 
 
 ```go
 package main
@@ -18,17 +18,18 @@ const (
 	TCP_DATA_PONG = "pong"
 )
 
-func main() {
-	var url = "tcp://127.0.0.1:6666"
-	client(url)
+func init() {
+	log.SetLevel("debug")
 }
 
-func client(strUrl string) {
+func main() {
+	var strUrl = "tcp://127.0.0.1:6666"
 	c := socketx.NewClient()
 	if err := c.Connect(strUrl); err != nil {
 		log.Errorf(err.Error())
 		return
 	}
+	defer c.Close()
 
 	for {
 		if _, err := c.Send([]byte(TCP_DATA_PING)); err != nil {
@@ -42,13 +43,11 @@ func client(strUrl string) {
 		} else {
 			log.Infof("tcp client received data [%s] length [%v] from [%v]", string(data), len(data), from)
 		}
-
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
-
 ```
-## 1.2 tcp socket server 
+## 1.2 TCP server 
 
 ```go
 package main
@@ -63,34 +62,29 @@ const (
 	TCP_DATA_PONG = "pong"
 )
 
-type Server struct {
-	service *socketx.SocketServer
+type ServerHandler struct {
+}
+
+func init() {
+	log.SetLevel("debug")
 }
 
 func main() {
 
-	var url = "tcp://0.0.0.0:6666"
-	server(url)
-
-	var c = make(chan bool, 1)
-	<-c //block main go routine
-}
-
-func server(strUrl string) {
-
-	var server Server
-	server.service = socketx.NewServer(strUrl)
-	if err := server.service.Listen(&server); err != nil {
+	var strUrl = "tcp://0.0.0.0:6666"
+	var handler ServerHandler
+	sock := socketx.NewServer(strUrl)
+	if err := sock.Listen(&handler); err != nil {
 		log.Errorf(err.Error())
 		return
 	}
 }
 
-func (s *Server) OnAccept(c *socketx.SocketClient) {
+func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 	log.Infof("connection accepted [%v]", c.GetRemoteAddr())
 }
 
-func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
 	log.Infof("tcp server received data [%s] length [%v] from [%v]", data, length, from)
 	if string(data) == TCP_DATA_PING {
 		if _, err := c.Send([]byte(TCP_DATA_PONG)); err != nil {
@@ -99,15 +93,15 @@ func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, fro
 	}
 }
 
-func (s *Server) OnClose(c *socketx.SocketClient) {
+func (s *ServerHandler) OnClose(c *socketx.SocketClient) {
 	log.Infof("connection [%v] closed", c.GetRemoteAddr())
 }
 
 ```
 
-# 2. udp socket example
+# 2. UDP socket
 
-## 2.1 udp socket client 
+## 2.1 UDP client
 
 ```go
 package main
@@ -119,27 +113,26 @@ import (
 )
 
 const (
-	UDP_CLIENT_URL  = "udp://127.0.0.1:6664"
+	UDP_CLIENT_ADDR = "udp://127.0.0.1:6664"
 	UDP_SERVER_ADDR = "udp://127.0.0.1:6665"
 )
-
-func main() {
-	client(UDP_CLIENT_URL)
-}
 
 const (
 	UDP_DATA_PING = "ping"
 	UDP_DATA_PONG = "pong"
 )
 
-func client(strUrl string) (err error) {
+func init() {
+	log.SetLevel("debug")
+}
+
+func main() {
 	c := socketx.NewClient()
-	if err = c.Listen(strUrl); err != nil {
+	if err := c.Listen(UDP_CLIENT_ADDR); err != nil {
 		log.Errorf(err.Error())
 		return
 	}
 	for {
-		log.Debugf("local address [%v] remote address [%v]", c.GetLocalAddr(), c.GetRemoteAddr())
 		if _, err := c.Send([]byte(UDP_DATA_PING), UDP_SERVER_ADDR); err != nil {
 			log.Errorf(err.Error())
 			break
@@ -157,7 +150,7 @@ func client(strUrl string) (err error) {
 }
 
 ```
-## 2.2 udp socket server 
+## 2.2 UDP server 
 
 ```go
 package main
@@ -173,33 +166,26 @@ const (
 	UDP_SERVER_URL = "udp://0.0.0.0:6665"
 )
 
-type Server struct {
-	service *socketx.SocketServer
+type ServerHandler struct {
+}
+
+func init() {
+	log.SetLevel("debug")
 }
 
 func main() {
-
-	server(UDP_SERVER_URL)
-
-	var c = make(chan bool, 1)
-	<-c //block main go routine
-}
-
-func server(strUrl string) {
-
-	var server Server
-	server.service = socketx.NewServer(strUrl)
-	if err := server.service.Listen(&server); err != nil {
+	var handler ServerHandler
+	sock := socketx.NewServer(UDP_SERVER_URL)
+	if err := sock.Listen(&handler); err != nil {
 		log.Errorf(err.Error())
 		return
 	}
 }
 
-func (s *Server) OnAccept(c *socketx.SocketClient) {
-	//log.Infof("connection accepted [%v]", c.GetRemoteAddr())
+func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 }
 
-func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
 	log.Infof("udp server received data [%s] length [%v] from [%v] ", data, length, from)
 	if string(data) == UDP_DATA_PING {
 		if _, err := c.Send([]byte(UDP_DATA_PONG), from); err != nil {
@@ -208,15 +194,13 @@ func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, fro
 	}
 }
 
-func (s *Server) OnClose(c *socketx.SocketClient) {
-	//log.Infof("connection [%v] closed", c.GetRemoteAddr())
+func (s *ServerHandler) OnClose(c *socketx.SocketClient) {
 }
-
 ```
 
-# 3. web socket example
+# 3. WEB socket 
 
-## 3.1 web socket client 
+## 3.1 WebSocket client 
 
 ```go
 package main
@@ -228,17 +212,22 @@ import (
 )
 
 const (
+	WEBSOCKET_SERVER_URL = "wss://127.0.0.1:6668/websocket"
+)
+
+const (
 	WEBSOCKET_DATA_PING = "ping"
 	WEBSOCKET_DATA_PONG = "pong"
 )
 
-func main() {
-	client("ws://127.0.0.1:6668/websocket")
+func init() {
+	log.SetLevel("debug")
 }
 
-func client(strUrl string) (err error) {
+func main() {
+	var err error
 	c := socketx.NewClient()
-	if err = c.Connect(strUrl); err != nil {
+	if err = c.Connect(WEBSOCKET_SERVER_URL); err != nil {
 		log.Errorf(err.Error())
 		return
 	}
@@ -262,8 +251,9 @@ func client(strUrl string) (err error) {
 	return
 }
 
+
 ```
-## 3.2 web socket server 
+## 3.2 WebSocket server 
 
 ```go
 package main
@@ -274,31 +264,30 @@ import (
 )
 
 const (
+	//WEBSOCKET_SERVER_URL = "ws://0.0.0.0:6668/websocket"
+	WEBSOCKET_SERVER_URL = "wss://0.0.0.0:6668/websocket?cert=cert.pem&key=key.pem"
+)
+
+const (
 	WEBSOCKET_DATA_PING = "ping"
 	WEBSOCKET_DATA_PONG = "pong"
 )
 
-type Server struct {
-	service *socketx.SocketServer
+type ServerHandler struct {
 }
 
 func main() {
-	server("ws://0.0.0.0:6668/websocket")
-	var c = make(chan bool, 1)
-	<-c //block main go routine
+	log.SetLevel("debug")
+	var handler ServerHandler
+	sock := socketx.NewServer(WEBSOCKET_SERVER_URL)
+	_ = sock.Listen(&handler)
 }
 
-func server(strUrl string) {
-	var server Server
-	server.service = socketx.NewServer(strUrl)
-	server.service.Listen(&server)
-}
-
-func (s *Server) OnAccept(c *socketx.SocketClient) {
+func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 	log.Infof("connection accepted [%v]", c.GetRemoteAddr())
 }
 
-func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
 	log.Infof("web socket server received data [%s] length [%v] from [%v]", data, length, from)
 	if string(data) == WEBSOCKET_DATA_PING {
 		if _, err := c.Send([]byte(WEBSOCKET_DATA_PONG)); err != nil {
@@ -307,15 +296,15 @@ func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, fro
 	}
 }
 
-func (s *Server) OnClose(c *socketx.SocketClient) {
+func (s *ServerHandler) OnClose(c *socketx.SocketClient) {
 	log.Infof("connection [%v] closed", c.GetRemoteAddr())
 }
 
 ```
 
-# 4. unix socket example
+# 4. UNIX socket
 
-## 4.1 unix socket client 
+## 4.1 UNIX client 
 
 ```go
 package main
@@ -327,18 +316,21 @@ import (
 )
 
 const (
+	UNIX_SOCKET_URL = "unix:///tmp/unix.sock"
+)
+
+const (
 	UNIX_DATA_PING = "ping"
 	UNIX_DATA_PONG = "pong"
 )
 
-func main() {
-	var url = "unix:///tmp/unix.sock"
-	client(url)
+func init() {
+	log.SetLevel("debug")
 }
 
-func client(strUrl string) {
+func main() {
 	c := socketx.NewClient()
-	if err := c.Connect(strUrl); err != nil {
+	if err := c.Connect(UNIX_SOCKET_URL); err != nil {
 		log.Errorf(err.Error())
 		return
 	}
@@ -361,7 +353,7 @@ func client(strUrl string) {
 }
 
 ```
-## 4.2 unix socket server 
+## 4.2 UNIX server 
 
 ```go
 package main
@@ -372,38 +364,34 @@ import (
 )
 
 const (
+	UNIX_SOCKET_URL = "unix:///tmp/unix.sock"
+)
+const (
 	UNIX_DATA_PING = "ping"
 	UNIX_DATA_PONG = "pong"
 )
 
-type Server struct {
-	service *socketx.SocketServer
+type ServerHandler struct {
+}
+
+func init() {
+	log.SetLevel("debug")
 }
 
 func main() {
-
-	var url = "unix:///tmp/unix.sock"
-	server(url)
-
-	var c = make(chan bool, 1)
-	<-c //block main go routine
-}
-
-func server(strUrl string) {
-
-	var server Server
-	server.service = socketx.NewServer(strUrl)
-	if err := server.service.Listen(&server); err != nil {
+	var handler ServerHandler
+	sock := socketx.NewServer(UNIX_SOCKET_URL)
+	if err := sock.Listen(&handler); err != nil {
 		log.Errorf(err.Error())
 		return
 	}
 }
 
-func (s *Server) OnAccept(c *socketx.SocketClient) {
+func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 	log.Infof("connection accepted [%v]", c.GetRemoteAddr())
 }
 
-func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
 	log.Infof("unix server received data [%s] length [%v] from [%v]", data, length, from)
 	if string(data) == UNIX_DATA_PING {
 		if _, err := c.Send([]byte(UNIX_DATA_PONG)); err != nil {
@@ -412,7 +400,7 @@ func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, fro
 	}
 }
 
-func (s *Server) OnClose(c *socketx.SocketClient) {
+func (s *ServerHandler) OnClose(c *socketx.SocketClient) {
 	log.Infof("connection [%v] closed", c.GetRemoteAddr())
 }
 

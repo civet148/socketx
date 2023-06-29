@@ -30,7 +30,7 @@ func NewSocket(ui *parser.UrlInfo) api.Socket {
 func (s *socket) Listen() (err error) {
 	var network = s.getNetwork()
 	strAddr := s.ui.GetHost()
-	log.Debugf("trying listen [%v] protocol [%v]", strAddr, s.ui.GetScheme())
+	//log.Debugf("trying listen [%v] protocol [%v]", strAddr, s.ui.GetScheme())
 	s.listener, err = net.Listen(network, strAddr)
 	if err != nil {
 		log.Errorf("listen tcp address [%s] failed", strAddr)

@@ -10,34 +10,29 @@ const (
 	TCP_DATA_PONG = "pong"
 )
 
-type Server struct {
-	service *socketx.SocketServer
+type ServerHandler struct {
+}
+
+func init() {
+	log.SetLevel("debug")
 }
 
 func main() {
 
-	var url = "tcp://0.0.0.0:6666"
-	server(url)
-
-	var c = make(chan bool, 1)
-	<-c //block main go routine
-}
-
-func server(strUrl string) {
-
-	var server Server
-	server.service = socketx.NewServer(strUrl)
-	if err := server.service.Listen(&server); err != nil {
+	var strUrl = "tcp://0.0.0.0:6666"
+	var handler ServerHandler
+	sock := socketx.NewServer(strUrl)
+	if err := sock.Listen(&handler); err != nil {
 		log.Errorf(err.Error())
 		return
 	}
 }
 
-func (s *Server) OnAccept(c *socketx.SocketClient) {
+func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 	log.Infof("connection accepted [%v]", c.GetRemoteAddr())
 }
 
-func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
 	log.Infof("tcp server received data [%s] length [%v] from [%v]", data, length, from)
 	if string(data) == TCP_DATA_PING {
 		if _, err := c.Send([]byte(TCP_DATA_PONG)); err != nil {
@@ -46,6 +41,6 @@ func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, fro
 	}
 }
 
-func (s *Server) OnClose(c *socketx.SocketClient) {
+func (s *ServerHandler) OnClose(c *socketx.SocketClient) {
 	log.Infof("connection [%v] closed", c.GetRemoteAddr())
 }

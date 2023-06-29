@@ -47,13 +47,13 @@ func (s SocketType) GoString() string {
 func (s SocketType) String() string {
 	switch s {
 	case SocketType_TCP:
-		return "SocketType_TCP"
+		return "TCP"
 	case SocketType_WEB:
-		return "SocketType_WEB"
+		return "WEBSOCKET"
 	case SocketType_UDP:
-		return "SocketType_UDP"
+		return "UDP"
 	case SocketType_UNIX:
-		return "SocketType_UNIX"
+		return "UNIX"
 	}
-	return "SocketType_Unknown"
+	return "SocketType<Unknown>"
 }

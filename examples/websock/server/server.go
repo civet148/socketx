@@ -6,34 +6,30 @@ import (
 )
 
 const (
+	//WEBSOCKET_SERVER_URL = "ws://0.0.0.0:6668/websocket"
+	WEBSOCKET_SERVER_URL = "wss://0.0.0.0:6668/websocket?cert=cert.pem&key=key.pem"
+)
+
+const (
 	WEBSOCKET_DATA_PING = "ping"
 	WEBSOCKET_DATA_PONG = "pong"
 )
 
-type Server struct {
-	*socketx.SocketServer
+type ServerHandler struct {
 }
 
 func main() {
-	var strUrl string
-	//strUrl = "ws://0.0.0.0:6668/websocket" //web socket
-	strUrl = "wss://0.0.0.0:6668/websocket?cert=cert.pem&key=key.pem" //web socket on TLS
-	server(strUrl)
-	var c = make(chan bool, 1)
-	<-c //block main go routine
+	log.SetLevel("debug")
+	var handler ServerHandler
+	sock := socketx.NewServer(WEBSOCKET_SERVER_URL)
+	_ = sock.Listen(&handler)
 }
 
-func server(strUrl string) {
-	var server Server
-	server.SocketServer = socketx.NewServer(strUrl)
-	_ = server.Listen(&server)
-}
-
-func (s *Server) OnAccept(c *socketx.SocketClient) {
+func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 	log.Infof("connection accepted [%v]", c.GetRemoteAddr())
 }
 
-func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
 	log.Infof("web socket server received data [%s] length [%v] from [%v]", data, length, from)
 	if string(data) == WEBSOCKET_DATA_PING {
 		if _, err := c.Send([]byte(WEBSOCKET_DATA_PONG)); err != nil {
@@ -42,6 +38,6 @@ func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, fro
 	}
 }
 
-func (s *Server) OnClose(c *socketx.SocketClient) {
+func (s *ServerHandler) OnClose(c *socketx.SocketClient) {
 	log.Infof("connection [%v] closed", c.GetRemoteAddr())
 }

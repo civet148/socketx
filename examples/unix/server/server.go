@@ -6,38 +6,34 @@ import (
 )
 
 const (
+	UNIX_SOCKET_URL = "unix:///tmp/unix.sock"
+)
+const (
 	UNIX_DATA_PING = "ping"
 	UNIX_DATA_PONG = "pong"
 )
 
-type Server struct {
-	service *socketx.SocketServer
+type ServerHandler struct {
+}
+
+func init() {
+	log.SetLevel("debug")
 }
 
 func main() {
-
-	var url = "unix:///tmp/unix.sock"
-	server(url)
-
-	var c = make(chan bool, 1)
-	<-c //block main go routine
-}
-
-func server(strUrl string) {
-
-	var server Server
-	server.service = socketx.NewServer(strUrl)
-	if err := server.service.Listen(&server); err != nil {
+	var handler ServerHandler
+	sock := socketx.NewServer(UNIX_SOCKET_URL)
+	if err := sock.Listen(&handler); err != nil {
 		log.Errorf(err.Error())
 		return
 	}
 }
 
-func (s *Server) OnAccept(c *socketx.SocketClient) {
+func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 	log.Infof("connection accepted [%v]", c.GetRemoteAddr())
 }
 
-func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
 	log.Infof("unix server received data [%s] length [%v] from [%v]", data, length, from)
 	if string(data) == UNIX_DATA_PING {
 		if _, err := c.Send([]byte(UNIX_DATA_PONG)); err != nil {
@@ -46,6 +42,6 @@ func (s *Server) OnReceive(c *socketx.SocketClient, data []byte, length int, fro
 	}
 }
 
-func (s *Server) OnClose(c *socketx.SocketClient) {
+func (s *ServerHandler) OnClose(c *socketx.SocketClient) {
 	log.Infof("connection [%v] closed", c.GetRemoteAddr())
 }
