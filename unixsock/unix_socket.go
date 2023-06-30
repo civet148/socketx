@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 )
 
 type socket struct {
@@ -16,6 +17,7 @@ type socket struct {
 	conn     net.Conn
 	listener *net.UnixListener
 	closed   bool
+	locker   sync.RWMutex
 }
 
 func init() {
@@ -90,6 +92,8 @@ func (s *socket) Connect() (err error) {
 }
 
 func (s *socket) Send(data []byte, to ...string) (n int, err error) {
+	s.locker.Lock()
+	defer s.locker.Unlock()
 	return s.conn.Write(data)
 }
 

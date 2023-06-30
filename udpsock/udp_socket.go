@@ -8,12 +8,14 @@ import (
 	"github.com/civet148/socketx/types"
 	"net"
 	"strings"
+	"sync"
 )
 
 type socket struct {
 	ui     *parser.UrlInfo
 	conn   *net.UDPConn
 	closed bool
+	locker sync.RWMutex
 }
 
 func init() {
@@ -62,7 +64,8 @@ func (s *socket) Send(data []byte, to ...string) (n int, err error) {
 	if len(to) == 0 {
 		return 0, fmt.Errorf("UDP send method to parameter required")
 	}
-
+	s.locker.Lock()
+	defer s.locker.Unlock()
 	strToAddr := to[0]
 	nSep := len(parser.URL_SCHEME_SEP)
 	if strings.Contains(strToAddr, parser.URL_SCHEME_SEP) {
