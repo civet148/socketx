@@ -27,7 +27,7 @@ func NewClient() *SocketClient {
 // WebSocket => 		ws://127.0.0.1:6668 [wss://127.0.0.1:6668]
 func (w *SocketClient) Connect(url string) (err error) {
 	var s api.Socket
-	if s = CreateSocket(url); s == nil {
+	if s = createSocket(url); s == nil {
 		return fmt.Errorf("create socket by url [%v] failed", url)
 	}
 	w.sock = s
@@ -36,7 +36,7 @@ func (w *SocketClient) Connect(url string) (err error) {
 
 // only for UDP
 func (w *SocketClient) Listen(url string) (err error) {
-	if w.sock = CreateSocket(url); w.sock == nil {
+	if w.sock = createSocket(url); w.sock == nil {
 		return fmt.Errorf("create socket by url [%v] failed", url)
 	}
 	return w.sock.Listen()

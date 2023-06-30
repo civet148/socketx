@@ -16,6 +16,11 @@ type SocketHandler interface {
 	OnClose(c *SocketClient)
 }
 
+type SocketOption struct {
+	CertFile string
+	KeyFile  string
+}
+
 type SocketServer struct {
 	url       string                       //listen url
 	sock      api.Socket                   //server socket
@@ -32,10 +37,10 @@ func init() {
 	log.SetLevel("info")
 }
 
-func NewServer(url string) *SocketServer {
+func NewServer(url string, options ...SocketOption) *SocketServer {
 
 	var s api.Socket
-	s = CreateSocket(url)
+	s = createSocket(url, options...)
 
 	return &SocketServer{
 		url:       url,
@@ -221,10 +226,15 @@ func (w *SocketServer) getClientAll() (clients []*SocketClient) {
 	return
 }
 
-func CreateSocket(url string) (s api.Socket) {
+func createSocket(url string, options ...SocketOption) (s api.Socket) {
 
 	url = strings.ToLower(url)
 	ui := parser.ParseUrl(url)
+	if len(options) != 0 {
+		opt := options[0]
+		ui.Queries[types.WSS_TLS_CERT] = opt.CertFile
+		ui.Queries[types.WSS_TLS_KEY] = opt.KeyFile
+	}
 	switch ui.Scheme {
 	case types.URL_SCHEME_TCP, types.URL_SCHEME_TCP4, types.URL_SCHEME_TCP6:
 		s = api.NewSocketInstance(types.SocketType_TCP, ui)
