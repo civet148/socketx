@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/civet148/log"
 	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
 )
 
 const (
@@ -30,8 +31,11 @@ func main() {
 func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 }
 
-func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
-	log.Infof("udp server received data [%s] length [%v] from [%v] ", data, length, from)
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, msg *api.SockMessage) {
+	data := msg.Data
+	from := msg.From
+	length := len(data)
+	log.Infof("server received data [%s] length [%v] from [%v] ", data, length, from)
 	if string(data) == UDP_DATA_PING {
 		if _, err := c.Send([]byte(UDP_DATA_PONG), from); err != nil {
 			log.Errorf(err.Error())

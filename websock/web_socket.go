@@ -108,19 +108,24 @@ func (s *socket) Send(data []byte, to ...string) (n int, err error) {
 	return
 }
 
-func (s *socket) Recv(length int) (data []byte, from string, err error) {
+func (s *socket) Recv(length int) (msg *api.SockMessage, err error) {
 	if s.conn == nil {
 		err = fmt.Errorf("web socket connection is nil")
 		return
 	}
 	var msgType int
+	var data []byte
 	if msgType, data, err = s.conn.ReadMessage(); err != nil {
 		log.Errorf(err.Error())
 		return
 	}
-	s.debugMessageType(msgType)
-	from = s.conn.RemoteAddr().String()
-	return
+	from := s.conn.RemoteAddr().String()
+	return &api.SockMessage{
+		Sock:    s,
+		Data:    data,
+		From:    from,
+		MsgType: msgType,
+	}, nil
 }
 
 func (s *socket) Close() (err error) {

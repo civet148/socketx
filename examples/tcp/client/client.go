@@ -30,12 +30,14 @@ func main() {
 			break
 		}
 
-		if data, from, err := c.Recv(len(TCP_DATA_PONG)); err != nil {
+		msg, err := c.Recv(len(TCP_DATA_PONG))
+		if err != nil {
 			log.Error(err.Error())
 			break
-		} else {
-			log.Infof("tcp client received data [%s] length [%v] from [%v]", string(data), len(data), from)
 		}
+		data := msg.Data
+		from := msg.From
+		log.Infof("client received data [%s] length [%v] from [%v]", string(msg.Data), len(data), from)
 		time.Sleep(1 * time.Second)
 	}
 }

@@ -46,7 +46,7 @@ func (w *SocketClient) Send(data []byte, to ...string) (n int, err error) {
 	return w.send(w.sock, data, to...)
 }
 
-func (w *SocketClient) Recv(length int) (data []byte, from string, err error) {
+func (w *SocketClient) Recv(length int) (msg *api.SockMessage, err error) {
 	return w.recv(w.sock, length)
 }
 
@@ -70,6 +70,6 @@ func (w *SocketClient) send(s api.Socket, data []byte, to ...string) (n int, err
 	return s.Send(data, to...)
 }
 
-func (w *SocketClient) recv(s api.Socket, length int) (data []byte, from string, err error) {
+func (w *SocketClient) recv(s api.Socket, length int) (msg *api.SockMessage, err error) {
 	return s.Recv(length)
 }

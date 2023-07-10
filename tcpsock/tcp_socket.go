@@ -76,7 +76,7 @@ func (s *socket) Send(data []byte, to ...string) (n int, err error) {
 }
 
 // length <= 0, default PACK_FRAGMENT_MAX=1500 bytes
-func (s *socket) Recv(length int) (data []byte, from string, err error) {
+func (s *socket) Recv(length int) (msg *api.SockMessage, err error) {
 
 	var once bool
 	var recv, left int
@@ -85,7 +85,7 @@ func (s *socket) Recv(length int) (data []byte, from string, err error) {
 		length = types.PACK_FRAGMENT_MAX
 	}
 	left = length
-	data = s.makeBuffer(length)
+	data := s.makeBuffer(length)
 	var n int
 	if once {
 		if n, err = s.conn.Read(data); err != nil {
@@ -108,8 +108,12 @@ func (s *socket) Recv(length int) (data []byte, from string, err error) {
 	if recv < length {
 		data = data[:recv]
 	}
-	from = s.conn.RemoteAddr().String()
-	return
+	from := s.conn.RemoteAddr().String()
+	return &api.SockMessage{
+		Sock: s,
+		Data: data,
+		From: from,
+	}, nil
 }
 
 func (s *socket) Close() (err error) {

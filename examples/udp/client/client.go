@@ -32,12 +32,14 @@ func main() {
 			break
 		}
 
-		if data, from, err := c.Recv(-1); err != nil {
+		msg, err := c.Recv(-1)
+		if err != nil {
 			log.Error(err.Error())
 			break
-		} else {
-			log.Infof("udp client received data [%s] length [%v] from [%v]", string(data), len(data), from)
 		}
+		data := msg.Data
+		from := msg.From
+		log.Infof("client received data [%s] length [%v] from [%v]", string(msg.Data), len(data), from)
 		time.Sleep(3 * time.Second)
 	}
 	return

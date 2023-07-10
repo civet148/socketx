@@ -12,7 +12,7 @@ import (
 
 type SocketHandler interface {
 	OnAccept(c *SocketClient)
-	OnReceive(c *SocketClient, data []byte, length int, from string)
+	OnReceive(c *SocketClient, msg *api.SockMessage)
 	OnClose(c *SocketClient)
 }
 
@@ -132,7 +132,7 @@ func (w *SocketServer) sendSocket(s api.Socket, data []byte, to ...string) (n in
 	return s.Send(data, to...)
 }
 
-func (w *SocketServer) recvSocket(s api.Socket) (data []byte, from string, err error) {
+func (w *SocketServer) recvSocket(s api.Socket) (msg *api.SockMessage, err error) {
 	if s == nil {
 		err = fmt.Errorf("send socket is nil")
 		return
@@ -150,18 +150,21 @@ func (w *SocketServer) onClose(s api.Socket) {
 	w.handler.OnClose(w.removeClient(s))
 }
 
-func (w *SocketServer) onReceive(s api.Socket, data []byte, length int, from string) {
+func (w *SocketServer) onReceive(s api.Socket, msg *api.SockMessage) {
 	c := w.getClient(s)
-	w.handler.OnReceive(c, data, length, from)
+	w.handler.OnReceive(c, msg)
 }
 
 func (w *SocketServer) readSocket(s api.Socket) {
 	for {
-		if data, from, err := w.recvSocket(s); err != nil {
+		msg, err := w.recvSocket(s)
+		if err != nil {
 			w.quiting <- s
 			break
-		} else if len(data) > 0 {
-			w.onReceive(s, data, len(data), from)
+		}
+		n := len(msg.Data)
+		if n > 0 {
+			w.onReceive(s, msg)
 		}
 	}
 }

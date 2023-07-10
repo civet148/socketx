@@ -80,15 +80,19 @@ func (s *socket) Send(data []byte, to ...string) (n int, err error) {
 	return s.conn.WriteToUDP(data, udpAddr)
 }
 
-func (s *socket) Recv(length int) (data []byte, from string, err error) {
+func (s *socket) Recv(length int) (msg *api.SockMessage, err error) {
 	var n int
 	var udpAddr *net.UDPAddr
-	data = s.makeBuffer(types.PACK_FRAGMENT_MAX)
+	data := s.makeBuffer(types.PACK_FRAGMENT_MAX)
 	if n, udpAddr, err = s.conn.ReadFromUDP(data); err != nil {
 		log.Errorf("read from UDP error [%v]", err.Error())
 		return
 	}
-	return data[:n], udpAddr.String(), nil
+	return &api.SockMessage{
+		Sock: s,
+		Data: data[:n],
+		From: udpAddr.String(),
+	}, nil
 }
 
 func (s *socket) Close() (err error) {

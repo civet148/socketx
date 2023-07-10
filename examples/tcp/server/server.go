@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/civet148/log"
 	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
 )
 
 const (
@@ -32,8 +33,11 @@ func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 	log.Infof("connection accepted [%v]", c.GetRemoteAddr())
 }
 
-func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
-	log.Infof("tcp server received data [%s] length [%v] from [%v]", data, length, from)
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, msg *api.SockMessage) {
+	data := msg.Data
+	from := msg.From
+	length := len(data)
+	log.Infof("server received data [%s] length [%v] from [%v]", data, length, from)
 	if string(data) == TCP_DATA_PING {
 		if _, err := c.Send([]byte(TCP_DATA_PONG)); err != nil {
 			log.Errorf(err.Error())

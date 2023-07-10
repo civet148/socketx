@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/civet148/log"
 	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
 	"time"
 )
 
@@ -28,19 +29,19 @@ func main() {
 	}
 
 	for {
-		var data []byte
-		var from string
-
-		if _, err := c.Send([]byte(WEBSOCKET_DATA_PING)); err != nil {
+		if _, err = c.Send([]byte(WEBSOCKET_DATA_PING)); err != nil {
 			log.Errorf(err.Error())
 			break
 		}
-
-		if data, from, err = c.Recv(-1); err != nil {
+		var msg *api.SockMessage
+		msg, err = c.Recv(-1)
+		if err != nil {
 			log.Errorf(err.Error())
 			break
 		}
-		log.Infof("web socket client received data [%s] length [%v] from [%v]", data, len(data), from)
+		data := msg.Data
+		from := msg.From
+		log.Infof("client received data [%s] length [%v] from [%v]", string(msg.Data), len(data), from)
 		time.Sleep(3 * time.Second)
 	}
 	return

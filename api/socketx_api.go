@@ -7,16 +7,23 @@ import (
 	"github.com/civet148/socketx/types"
 )
 
+type SockMessage struct {
+	Sock    Socket //socket handle
+	Data    []byte //data received
+	From    string //remote address for UDP
+	MsgType int    //only for websocket
+}
+
 type Socket interface {
-	Listen() (err error)                                   // bind and listen on address and port
-	Accept() Socket                                        // accept connection...
-	Connect() (err error)                                  // for tcp/web socket
-	Send(data []byte, to ...string) (n int, err error)     // send to...
-	Recv(length int) (data []byte, from string, err error) // receive from... if length > 0, will receive the bytes specified.
-	Close() (err error)                                    // close socket
-	GetLocalAddr() string                                  // get socket local address
-	GetRemoteAddr() string                                 // get socket remote address
-	GetSocketType() types.SocketType                       // get socket type
+	Listen() (err error)                               // bind and listen on address and port
+	Accept() Socket                                    // accept connection...
+	Connect() (err error)                              // for tcp/web socket
+	Send(data []byte, to ...string) (n int, err error) // send to...
+	Recv(length int) (msg *SockMessage, err error)     // receive from... if length > 0, will receive the bytes specified.
+	Close() (err error)                                // close socket
+	GetLocalAddr() string                              // get socket local address
+	GetRemoteAddr() string                             // get socket remote address
+	GetSocketType() types.SocketType                   // get socket type
 }
 
 type SocketInstance func(ui *parser.UrlInfo) Socket
