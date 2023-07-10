@@ -37,12 +37,14 @@ func main() {
 			break
 		}
 
-		if data, from, err := c.Recv(len(TCP_DATA_PONG)); err != nil {
+		msg, err := c.Recv(len(TCP_DATA_PONG))
+		if err != nil {
 			log.Error(err.Error())
 			break
-		} else {
-			log.Infof("tcp client received data [%s] length [%v] from [%v]", string(data), len(data), from)
 		}
+		data := msg.Data
+		from := msg.From
+		log.Infof("client received data [%s] length [%v] from [%v]", string(msg.Data), len(data), from)
 		time.Sleep(1 * time.Second)
 	}
 }
@@ -55,6 +57,7 @@ package main
 import (
 	"github.com/civet148/log"
 	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
 )
 
 const (
@@ -84,8 +87,11 @@ func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 	log.Infof("connection accepted [%v]", c.GetRemoteAddr())
 }
 
-func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
-	log.Infof("tcp server received data [%s] length [%v] from [%v]", data, length, from)
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, msg *api.SockMessage) {
+	data := msg.Data
+	from := msg.From
+	length := len(data)
+	log.Infof("server received data [%s] length [%v] from [%v]", data, length, from)
 	if string(data) == TCP_DATA_PING {
 		if _, err := c.Send([]byte(TCP_DATA_PONG)); err != nil {
 			log.Errorf(err.Error())
@@ -96,7 +102,6 @@ func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length i
 func (s *ServerHandler) OnClose(c *socketx.SocketClient) {
 	log.Infof("connection [%v] closed", c.GetRemoteAddr())
 }
-
 ```
 
 # 2. UDP socket
@@ -138,17 +143,18 @@ func main() {
 			break
 		}
 
-		if data, from, err := c.Recv(-1); err != nil {
+		msg, err := c.Recv(-1)
+		if err != nil {
 			log.Error(err.Error())
 			break
-		} else {
-			log.Infof("udp client received data [%s] length [%v] from [%v]", string(data), len(data), from)
 		}
+		data := msg.Data
+		from := msg.From
+		log.Infof("client received data [%s] length [%v] from [%v]", string(msg.Data), len(data), from)
 		time.Sleep(3 * time.Second)
 	}
 	return
 }
-
 ```
 ## 2.2 UDP server 
 
@@ -158,6 +164,7 @@ package main
 import (
 	"github.com/civet148/log"
 	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
 )
 
 const (
@@ -185,8 +192,11 @@ func main() {
 func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 }
 
-func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
-	log.Infof("udp server received data [%s] length [%v] from [%v] ", data, length, from)
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, msg *api.SockMessage) {
+	data := msg.Data
+	from := msg.From
+	length := len(data)
+	log.Infof("server received data [%s] length [%v] from [%v] ", data, length, from)
 	if string(data) == UDP_DATA_PING {
 		if _, err := c.Send([]byte(UDP_DATA_PONG), from); err != nil {
 			log.Errorf(err.Error())
@@ -208,6 +218,7 @@ package main
 import (
 	"github.com/civet148/log"
 	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
 	"time"
 )
 
@@ -233,24 +244,23 @@ func main() {
 	}
 
 	for {
-		var data []byte
-		var from string
-
-		if _, err := c.Send([]byte(WEBSOCKET_DATA_PING)); err != nil {
+		if _, err = c.Send([]byte(WEBSOCKET_DATA_PING)); err != nil {
 			log.Errorf(err.Error())
 			break
 		}
-
-		if data, from, err = c.Recv(-1); err != nil {
+		var msg *api.SockMessage
+		msg, err = c.Recv(-1)
+		if err != nil {
 			log.Errorf(err.Error())
 			break
 		}
-		log.Infof("web socket client received data [%s] length [%v] from [%v]", data, len(data), from)
+		data := msg.Data
+		from := msg.From
+		log.Infof("client received data [%s] length [%v] from [%v]", string(msg.Data), len(data), from)
 		time.Sleep(3 * time.Second)
 	}
 	return
 }
-
 
 ```
 ## 3.2 WebSocket server 
@@ -261,6 +271,7 @@ package main
 import (
 	"github.com/civet148/log"
 	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
 )
 
 const (
@@ -287,8 +298,11 @@ func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 	log.Infof("connection accepted [%v]", c.GetRemoteAddr())
 }
 
-func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
-	log.Infof("web socket server received data [%s] length [%v] from [%v]", data, length, from)
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, msg *api.SockMessage) {
+	data := msg.Data
+	from := msg.From
+	length := len(data)
+	log.Infof("server received data [%s] length [%v] from [%v] type [%v]", data, length, from, msg.MsgType)
 	if string(data) == WEBSOCKET_DATA_PING {
 		if _, err := c.Send([]byte(WEBSOCKET_DATA_PONG)); err != nil {
 			log.Errorf(err.Error())
@@ -341,13 +355,14 @@ func main() {
 			break
 		}
 
-		if data, from, err := c.Recv(len(UNIX_DATA_PONG)); err != nil {
+		msg, err := c.Recv(len(UNIX_DATA_PONG))
+		if err != nil {
 			log.Error(err.Error())
 			break
-		} else {
-			log.Infof("unix client received data [%s] length [%v] from [%v]", string(data), len(data), from)
 		}
-
+		data := msg.Data
+		from := msg.From
+		log.Infof("client received data [%s] length [%v] from [%v]", string(msg.Data), len(data), from)
 		time.Sleep(3 * time.Second)
 	}
 }
@@ -361,6 +376,7 @@ package main
 import (
 	"github.com/civet148/log"
 	"github.com/civet148/socketx"
+	"github.com/civet148/socketx/api"
 )
 
 const (
@@ -391,8 +407,11 @@ func (s *ServerHandler) OnAccept(c *socketx.SocketClient) {
 	log.Infof("connection accepted [%v]", c.GetRemoteAddr())
 }
 
-func (s *ServerHandler) OnReceive(c *socketx.SocketClient, data []byte, length int, from string) {
-	log.Infof("unix server received data [%s] length [%v] from [%v]", data, length, from)
+func (s *ServerHandler) OnReceive(c *socketx.SocketClient, msg *api.SockMessage) {
+	data := msg.Data
+	from := msg.From
+	length := len(data)
+	log.Infof("server received data [%s] length [%v] from [%v] ", data, length, from)
 	if string(data) == UNIX_DATA_PING {
 		if _, err := c.Send([]byte(UNIX_DATA_PONG)); err != nil {
 			log.Errorf(err.Error())
