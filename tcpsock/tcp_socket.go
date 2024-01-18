@@ -36,8 +36,7 @@ func (s *socket) Listen() (err error) {
 	//log.Debugf("trying listen [%v] protocol [%v]", strAddr, s.ui.GetScheme())
 	s.listener, err = net.Listen(network, strAddr)
 	if err != nil {
-		log.Errorf("listen tcp address [%s] failed", strAddr)
-		return
+		return log.Errorf("listen tcp address [%s] error [%s]", strAddr, err.Error())
 	}
 	return
 }
@@ -58,14 +57,12 @@ func (s *socket) Connect() (err error) {
 	var tcpAddr *net.TCPAddr
 	tcpAddr, err = net.ResolveTCPAddr(network, addr)
 	if err != nil {
-		log.Errorf("resolve tcp address [%s] failed, error [%s]", addr, err)
-		return err
+		return log.Errorf("resolve tcp address [%s] failed, error [%s]", addr, err)
 	}
 
 	s.conn, err = net.DialTCP(network, nil, tcpAddr)
 	if err != nil {
-		log.Errorf("dial tcp to [%s] failed", addr)
-		return err
+		return log.Errorf("dial tcp to [%s] failed", addr)
 	}
 	return
 }
@@ -95,8 +92,7 @@ DATA_RECV:
 			if err == io.EOF {
 				goto DATA_RECV
 			}
-			log.Errorf("read data error [%v]", err.Error())
-			return
+			return nil, log.Errorf("read data from %s error [%v]", s.GetRemoteAddr(), err.Error())
 		}
 		recv = n
 	} else {
@@ -105,8 +101,7 @@ DATA_RECV:
 				if err == io.EOF {
 					goto DATA_RECV
 				}
-				log.Errorf("read data error [%v]", err.Error())
-				return
+				return nil, log.Errorf("read data from %s error [%v]", s.GetRemoteAddr(), err.Error())
 			}
 			left -= n
 			recv += n
@@ -126,13 +121,10 @@ DATA_RECV:
 
 func (s *socket) Close() (err error) {
 	if s.closed {
-		err = fmt.Errorf("socket already closed")
-		return
+		return fmt.Errorf("socket already closed")
 	}
 	if s.conn == nil {
-		err = fmt.Errorf("socket is nil")
-		log.Error(err.Error())
-		return
+		return fmt.Errorf("socket is nil")
 	}
 	s.closed = true
 	return s.conn.Close()

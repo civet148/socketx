@@ -36,13 +36,11 @@ func (s *socket) Listen() (err error) {
 	var network = s.getNetwork()
 
 	if udpAddr, err = net.ResolveUDPAddr(network, strAddr); err != nil {
-		log.Errorf("resolve UDP addr [%v] error [%v]", strAddr, err.Error())
-		return
+		return log.Errorf("resolve UDP addr [%v] error [%v]", strAddr, err.Error())
 	}
 
 	if s.conn, err = net.ListenUDP(network, udpAddr); err != nil {
-		log.Errorf("listen UDP addr [%v] error [%v]", strAddr, err.Error())
-		return
+		return log.Errorf("listen UDP addr [%v] error [%v]", strAddr, err.Error())
 	}
 	return
 }
@@ -74,8 +72,7 @@ func (s *socket) Send(data []byte, to ...string) (n int, err error) {
 	}
 
 	if udpAddr, err = net.ResolveUDPAddr(network, strToAddr); err != nil {
-		log.Errorf("resolve UDP addr [%v] error [%v]", strToAddr, err.Error())
-		return
+		return 0, log.Errorf("resolve UDP addr [%v] error [%v]", strToAddr, err.Error())
 	}
 	return s.conn.WriteToUDP(data, udpAddr)
 }
@@ -97,13 +94,10 @@ func (s *socket) Recv(length int) (msg *api.SockMessage, err error) {
 
 func (s *socket) Close() (err error) {
 	if s.closed {
-		err = fmt.Errorf("socket already closed")
-		return
+		return fmt.Errorf("socket already closed")
 	}
 	if s.conn == nil {
-		err = fmt.Errorf("socket is nil")
-		log.Error(err.Error())
-		return
+		return fmt.Errorf("socket is nil")
 	}
 	s.closed = true
 	return s.conn.Close()

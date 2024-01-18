@@ -40,24 +40,18 @@ func (s *socket) Listen() (err error) {
 		return log.Errorf(err.Error())
 	}
 	if fi.Name() != "" {
-		log.Warnf("address %s already exists, remove it", addr)
 		if err = os.Remove(addr); err != nil {
-			log.Errorf("remove file error [%v]", err.Error())
-			return
+			return log.Errorf("remove file error [%v]", err.Error())
 		}
 	}
 
 	var unixAddr *net.UnixAddr
 	unixAddr, err = net.ResolveUnixAddr(network, s.ui.GetPath())
 	if err != nil {
-		err = fmt.Errorf("Cannot resolve unix addr: " + err.Error())
-		log.Errorf(err.Error())
-		return
+		return log.Errorf("resolve unix addr %s error [%s]", s.ui.GetPath(), err.Error())
 	}
-	//log.Debugf("trying listen [%v] protocol [%v]", addr, s.ui.GetScheme())
 	if s.listener, err = net.ListenUnix("unix", unixAddr); err != nil {
-		log.Errorf("listen tcp address [%s] failed", addr)
-		return
+		return log.Errorf("listen tcp address [%s] error [%s]", addr, err.Error())
 	}
 	return
 }
@@ -79,14 +73,12 @@ func (s *socket) Connect() (err error) {
 	var unixAddr *net.UnixAddr
 	unixAddr, err = net.ResolveUnixAddr(network, addr)
 	if err != nil {
-		log.Errorf("resolve tcp address [%s] failed, error [%s]", addr, err)
-		return err
+		return log.Errorf("resolve address [%s] error [%s]", addr, err)
 	}
 
 	s.conn, err = net.DialUnix(network, nil, unixAddr)
 	if err != nil {
-		log.Errorf("dial tcp to [%s] failed", addr)
-		return err
+		return log.Errorf("dial [%s] to [%s] error [%s]", network, addr, err.Error())
 	}
 	return
 }
@@ -111,16 +103,14 @@ func (s *socket) Recv(length int) (msg *api.SockMessage, err error) {
 	var n int
 	if once {
 		if n, err = s.conn.Read(data); err != nil {
-			log.Errorf("read data error [%v]", err.Error())
-			return
+			return nil, log.Errorf("read data from [%s] error [%v]", s.GetRemoteAddr(), err.Error())
 		}
 		recv = n
 	} else {
 
 		for left > 0 {
 			if n, err = s.conn.Read(data[recv:]); err != nil {
-				log.Errorf("read data error [%v]", err.Error())
-				return
+				return nil, log.Errorf("read data from [%s] error [%v]", s.GetRemoteAddr(), err.Error())
 			}
 			left -= n
 			recv += n
@@ -144,9 +134,7 @@ func (s *socket) Close() (err error) {
 		return
 	}
 	if s.conn == nil {
-		err = fmt.Errorf("socket is nil")
-		log.Error(err.Error())
-		return
+		return log.Error("socket is nil")
 	}
 	s.closed = true
 	return s.conn.Close()

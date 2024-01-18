@@ -44,10 +44,8 @@ func (s *socket) Listen() (err error) {
 
 	go func() {
 		if s.ui.Scheme == types.URL_SCHEME_WSS {
-			log.Debugf("listen GET [%s://%s%s] -> cert [%s] key [%s]", s.ui.Scheme, s.ui.Host, s.ui.Path, strCertFile, strKeyFile)
 			err = engine.RunTLS(s.ui.Host, strCertFile, strKeyFile)
 		} else {
-			log.Debugf("listen GET [%s://%s%s]", s.ui.Scheme, s.ui.Host, s.ui.Path)
 			err = engine.Run(s.ui.Host)
 		}
 
@@ -66,7 +64,6 @@ func (s *socket) Accept() api.Socket {
 	select {
 	case c = <-s.accepting:
 		{
-			log.Debugf("accepted client [%v]", c.RemoteAddr().String())
 			c.SetCloseHandler(s.webSocketCloseHandler)
 			c.SetPingHandler(s.websocketPingHandler)
 			c.SetPongHandler(s.websocketPongHandler)
@@ -81,7 +78,6 @@ func (s *socket) Accept() api.Socket {
 
 func (s *socket) Connect() (err error) {
 	url := fmt.Sprintf("%v://%v%v", s.ui.Scheme, s.ui.Host, s.ui.Path)
-	log.Debugf("connect to url [%v]", url)
 	dialer := &websocket.Dialer{}
 	if s.ui.Scheme == types.URL_SCHEME_WSS {
 		dialer.TLSClientConfig = &tls.Config{RootCAs: nil, InsecureSkipVerify: true}
@@ -104,14 +100,12 @@ func (s *socket) Send(data []byte, to ...string) (n int, err error) {
 		return
 	}
 	n = len(data)
-	log.Debugf("data [%v] length [%v]", string(data), n)
 	return
 }
 
 func (s *socket) Recv(length int) (msg *api.SockMessage, err error) {
 	if s.conn == nil {
-		err = fmt.Errorf("web socket connection is nil")
-		return
+		return nil, log.Errorf("web socket connection is nil")
 	}
 	var msgType int
 	var data []byte
@@ -131,14 +125,11 @@ func (s *socket) Recv(length int) (msg *api.SockMessage, err error) {
 func (s *socket) Close() (err error) {
 
 	if s.closed {
-		err = fmt.Errorf("socket already closed")
-		return
+		return fmt.Errorf("socket already closed")
 	}
 	s.closed = true
 	if s.conn == nil {
-		err = fmt.Errorf("socket is nil")
-		log.Error(err.Error())
-		return
+		return fmt.Errorf("socket is nil")
 	}
 	s.closed = true
 	return s.conn.Close()
@@ -182,7 +173,6 @@ func (s *socket) debugMessageType(msgType int) {
 
 func (s *socket) webSocketRegister(ctx *gin.Context) {
 	var err error
-	//log.Debugf("request ctx [%v]", ctx)
 	upGrader := &websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
 			return true
