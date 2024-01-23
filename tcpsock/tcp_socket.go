@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 )
 
 type socket struct {
@@ -33,7 +34,6 @@ func NewSocket(ui *parser.UrlInfo) api.Socket {
 func (s *socket) Listen() (err error) {
 	var network = s.getNetwork()
 	strAddr := s.ui.GetHost()
-	//log.Debugf("trying listen [%v] protocol [%v]", strAddr, s.ui.GetScheme())
 	s.listener, err = net.Listen(network, strAddr)
 	if err != nil {
 		return log.Errorf("listen tcp address [%s] error [%s]", strAddr, err.Error())
@@ -90,6 +90,7 @@ DATA_RECV:
 	if once {
 		if n, err = s.conn.Read(data); err != nil {
 			if err == io.EOF {
+				time.Sleep(time.Millisecond)
 				goto DATA_RECV
 			}
 			return nil, log.Errorf("read data from %s error [%v]", s.GetRemoteAddr(), err.Error())
@@ -99,6 +100,7 @@ DATA_RECV:
 		for left > 0 {
 			if n, err = s.conn.Read(data[recv:]); err != nil {
 				if err == io.EOF {
+					time.Sleep(time.Millisecond)
 					goto DATA_RECV
 				}
 				return nil, log.Errorf("read data from %s error [%v]", s.GetRemoteAddr(), err.Error())
