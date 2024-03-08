@@ -19,15 +19,21 @@ type socket struct {
 	accepting chan *websocket.Conn
 	closed    bool
 	locker    sync.RWMutex
+	option    *api.SocketOption
 }
 
 func init() {
 	_ = api.Register(types.SocketType_WEB, NewSocket)
 }
 
-func NewSocket(ui *parser.UrlInfo) api.Socket {
+func NewSocket(ui *parser.UrlInfo, options ...api.SocketOption) api.Socket {
+	var option *api.SocketOption
+	if len(options) != 0 {
+		option = &options[0]
+	}
 	return &socket{
 		ui:        ui,
+		option:    option,
 		accepting: make(chan *websocket.Conn, 1000),
 	}
 }
@@ -82,7 +88,12 @@ func (s *socket) Connect() (err error) {
 	if s.ui.Scheme == types.URL_SCHEME_WSS {
 		dialer.TLSClientConfig = &tls.Config{RootCAs: nil, InsecureSkipVerify: true}
 	}
-	if s.conn, _, err = dialer.Dial(url, nil); err != nil {
+	var header http.Header
+	if s.option != nil {
+		header = s.option.Header
+	}
+	log.Infof("connecting to [%s] with header [%+v]", url, header)
+	if s.conn, _, err = dialer.Dial(url, header); err != nil {
 		log.Errorf(err.Error())
 		return
 	}

@@ -5,7 +5,14 @@ import (
 	"github.com/civet148/gotools/parser"
 	"github.com/civet148/log"
 	"github.com/civet148/socketx/types"
+	"net/http"
 )
+
+type SocketOption struct {
+	CertFile string
+	KeyFile  string
+	Header   http.Header
+}
 
 type SockMessage struct {
 	Sock    Socket //socket handle
@@ -26,7 +33,7 @@ type Socket interface {
 	GetSocketType() types.SocketType                   // get socket type
 }
 
-type SocketInstance func(ui *parser.UrlInfo) Socket
+type SocketInstance func(ui *parser.UrlInfo, options ...SocketOption) Socket
 
 var instances = make(map[types.SocketType]SocketInstance)
 
@@ -41,12 +48,12 @@ func Register(sockType types.SocketType, inst SocketInstance) (err error) {
 	return
 }
 
-func NewSocketInstance(sockType types.SocketType, ui *parser.UrlInfo) (s Socket) {
+func NewSocketInstance(sockType types.SocketType, ui *parser.UrlInfo, options ...SocketOption) (s Socket) {
 	if inst, ok := instances[sockType]; !ok {
 		log.Errorf("socket type [%v] instance not register", sockType)
 		return nil
 	} else {
-		s = inst(ui)
+		s = inst(ui, options...)
 	}
 	return
 }

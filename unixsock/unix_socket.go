@@ -24,7 +24,7 @@ func init() {
 	_ = api.Register(types.SocketType_UNIX, NewSocket)
 }
 
-func NewSocket(ui *parser.UrlInfo) api.Socket {
+func NewSocket(ui *parser.UrlInfo, options ...api.SocketOption) api.Socket {
 
 	return &socket{
 		ui: ui,

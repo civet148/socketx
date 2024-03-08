@@ -25,9 +25,9 @@ func NewClient() *SocketClient {
 
 // IPv4      => 		tcp://127.0.0.1:6666 [tcp4://127.0.0.1:6666]
 // WebSocket => 		ws://127.0.0.1:6668 [wss://127.0.0.1:6668]
-func (w *SocketClient) Connect(url string) (err error) {
+func (w *SocketClient) Connect(url string, options ...api.SocketOption) (err error) {
 	var s api.Socket
-	if s = createSocket(url); s == nil {
+	if s = createSocket(url, options...); s == nil {
 		return fmt.Errorf("create socket by url [%v] failed", url)
 	}
 	w.sock = s

@@ -16,11 +16,6 @@ type SocketHandler interface {
 	OnClose(c *SocketClient)
 }
 
-type SocketOption struct {
-	CertFile string
-	KeyFile  string
-}
-
 type SocketServer struct {
 	url       string                       //listen url
 	sock      api.Socket                   //server socket
@@ -37,7 +32,7 @@ func init() {
 	log.SetLevel("info")
 }
 
-func NewServer(url string, options ...SocketOption) *SocketServer {
+func NewServer(url string, options ...api.SocketOption) *SocketServer {
 
 	var s api.Socket
 	s = createSocket(url, options...)
@@ -229,7 +224,7 @@ func (w *SocketServer) getClientAll() (clients []*SocketClient) {
 	return
 }
 
-func createSocket(url string, options ...SocketOption) (s api.Socket) {
+func createSocket(url string, options ...api.SocketOption) (s api.Socket) {
 
 	url = strings.ToLower(url)
 	ui := parser.ParseUrl(url)
@@ -242,7 +237,7 @@ func createSocket(url string, options ...SocketOption) (s api.Socket) {
 	case types.URL_SCHEME_TCP, types.URL_SCHEME_TCP4, types.URL_SCHEME_TCP6:
 		s = api.NewSocketInstance(types.SocketType_TCP, ui)
 	case types.URL_SCHEME_WS, types.URL_SCHEME_WSS:
-		s = api.NewSocketInstance(types.SocketType_WEB, ui)
+		s = api.NewSocketInstance(types.SocketType_WEB, ui, options...)
 	case types.URL_SCHEME_UDP, types.URL_SCHEME_UDP4, types.URL_SCHEME_UDP6:
 		s = api.NewSocketInstance(types.SocketType_UDP, ui)
 	case types.URL_SCHEME_UNIX:
