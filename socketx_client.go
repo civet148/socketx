@@ -1,6 +1,7 @@
 package socketx
 
 import (
+	"encoding/base64"
 	"fmt"
 	"github.com/civet148/log"
 	"github.com/civet148/socketx/api"
@@ -72,4 +73,13 @@ func (w *SocketClient) send(s api.Socket, data []byte, to ...string) (n int, err
 
 func (w *SocketClient) recv(s api.Socket, length int) (msg *api.SockMessage, err error) {
 	return s.Recv(length)
+}
+
+func BasicAuth(user, password string) string {
+	token := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", user, password)))
+	return fmt.Sprintf("Basic %s", token)
+}
+
+func OAuth2(token string) string {
+	return fmt.Sprintf("Bearer %s", token)
 }
