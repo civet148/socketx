@@ -1,6 +1,7 @@
 package unixsock
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/civet148/gotools/parser"
 	"github.com/civet148/log"
@@ -87,6 +88,15 @@ func (s *socket) Send(data []byte, to ...string) (n int, err error) {
 	s.locker.Lock()
 	defer s.locker.Unlock()
 	return s.conn.Write(data)
+}
+
+func (s *socket) SendJson(v interface{}, to ...string) (n int, err error) {
+	var data []byte
+	data, err = json.Marshal(v)
+	if err != nil {
+		return 0, log.Errorf(err.Error())
+	}
+	return s.Send(data, to...)
 }
 
 // length <= 0, default PACK_FRAGMENT_MAX=1500 bytes

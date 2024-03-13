@@ -1,6 +1,7 @@
 package udpsock
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/civet148/gotools/parser"
 	"github.com/civet148/log"
@@ -75,6 +76,15 @@ func (s *socket) Send(data []byte, to ...string) (n int, err error) {
 		return 0, log.Errorf("resolve UDP addr [%v] error [%v]", strToAddr, err.Error())
 	}
 	return s.conn.WriteToUDP(data, udpAddr)
+}
+
+func (s *socket) SendJson(v interface{}, to ...string) (n int, err error) {
+	var data []byte
+	data, err = json.Marshal(v)
+	if err != nil {
+		return 0, log.Errorf(err.Error())
+	}
+	return s.Send(data, to...)
 }
 
 func (s *socket) Recv(length int) (msg *api.SockMessage, err error) {

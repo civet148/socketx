@@ -22,15 +22,16 @@ type SockMessage struct {
 }
 
 type Socket interface {
-	Listen() (err error)                               // bind and listen on address and port
-	Accept() Socket                                    // accept connection...
-	Connect() (err error)                              // for tcp/web socket
-	Send(data []byte, to ...string) (n int, err error) // send to...
-	Recv(length int) (msg *SockMessage, err error)     // receive from... if length > 0, will receive the bytes specified.
-	Close() (err error)                                // close socket
-	GetLocalAddr() string                              // get socket local address
-	GetRemoteAddr() string                             // get socket remote address
-	GetSocketType() types.SocketType                   // get socket type
+	Listen() (err error)                                     // bind and listen on address and port
+	Accept() Socket                                          // accept connection...
+	Connect() (err error)                                    // for tcp/web socket
+	Send(data []byte, to ...string) (n int, err error)       // send to...
+	SendJson(v interface{}, to ...string) (n int, err error) // send json to...
+	Recv(length int) (msg *SockMessage, err error)           // receive from... if length > 0, will receive the bytes specified.
+	Close() (err error)                                      // close socket
+	GetLocalAddr() string                                    // get socket local address
+	GetRemoteAddr() string                                   // get socket remote address
+	GetSocketType() types.SocketType                         // get socket type
 }
 
 type SocketInstance func(ui *parser.UrlInfo, options ...SocketOption) Socket
