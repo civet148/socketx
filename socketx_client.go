@@ -47,6 +47,10 @@ func (w *SocketClient) Send(data []byte, to ...string) (n int, err error) {
 	return w.send(w.sock, data, to...)
 }
 
+func (w *SocketClient) SendJson(v interface{}, to ...string) (n int, err error) {
+	return w.SendJson(v, to...)
+}
+
 func (w *SocketClient) Recv(length int) (msg *api.SockMessage, err error) {
 	return w.recv(w.sock, length)
 }
