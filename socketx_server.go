@@ -6,7 +6,6 @@ import (
 	"github.com/civet148/log"
 	"github.com/civet148/socketx/api"
 	"github.com/civet148/socketx/types"
-	"strings"
 	"sync"
 )
 
@@ -225,8 +224,6 @@ func (w *SocketServer) getClientAll() (clients []*SocketClient) {
 }
 
 func createSocket(url string, options ...api.SocketOption) (s api.Socket) {
-
-	url = strings.ToLower(url)
 	ui := parser.ParseUrl(url)
 	if len(options) != 0 {
 		opt := options[0]

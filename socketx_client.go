@@ -48,7 +48,7 @@ func (w *SocketClient) Send(data []byte, to ...string) (n int, err error) {
 }
 
 func (w *SocketClient) SendJson(v interface{}, to ...string) (n int, err error) {
-	return w.SendJson(v, to...)
+	return w.sendJson(w.sock, v, to...)
 }
 
 func (w *SocketClient) Recv(length int) (msg *api.SockMessage, err error) {
@@ -73,6 +73,10 @@ func (w *SocketClient) IsClosed() bool {
 
 func (w *SocketClient) send(s api.Socket, data []byte, to ...string) (n int, err error) {
 	return s.Send(data, to...)
+}
+
+func (w *SocketClient) sendJson(s api.Socket, v interface{}, to ...string) (n int, err error) {
+	return s.SendJson(v, to...)
 }
 
 func (w *SocketClient) recv(s api.Socket, length int) (msg *api.SockMessage, err error) {
