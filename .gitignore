@@ -19,3 +19,11 @@
 
 # Go workspace file
 go.work
+/examples/tcp/server/server
+/examples/tcp/client/client
+/examples/udp/server/server
+/examples/udp/client/client
+/examples/unix/server/server
+/examples/unix/client/client
+/examples/websocket/server/server
+/examples/websocket/client/client

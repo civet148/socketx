@@ -7,10 +7,8 @@ import (
 	"github.com/civet148/log"
 	"github.com/civet148/socketx/api"
 	"github.com/civet148/socketx/types"
-	"io"
 	"net"
 	"sync"
-	"time"
 )
 
 type socket struct {
@@ -95,24 +93,15 @@ func (s *socket) Recv(length int) (msg *api.SockMessage, err error) {
 	left = length
 	data := s.makeBuffer(length)
 
-DATA_RECV:
 	var n int
 	if once {
 		if n, err = s.conn.Read(data); err != nil {
-			if err == io.EOF {
-				time.Sleep(time.Millisecond)
-				goto DATA_RECV
-			}
 			return nil, log.Errorf("read data from %s error [%v]", s.GetRemoteAddr(), err.Error())
 		}
 		recv = n
 	} else {
 		for left > 0 {
 			if n, err = s.conn.Read(data[recv:]); err != nil {
-				if err == io.EOF {
-					time.Sleep(time.Millisecond)
-					goto DATA_RECV
-				}
 				return nil, log.Errorf("read data from %s error [%v]", s.GetRemoteAddr(), err.Error())
 			}
 			left -= n

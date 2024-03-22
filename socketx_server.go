@@ -7,6 +7,7 @@ import (
 	"github.com/civet148/socketx/api"
 	"github.com/civet148/socketx/types"
 	"sync"
+	"time"
 )
 
 type SocketHandler interface {
@@ -136,8 +137,9 @@ func (w *SocketServer) recvSocket(s api.Socket) (msg *api.SockMessage, err error
 
 func (w *SocketServer) onAccept(s api.Socket) {
 	c := w.addClient(s)
-	go w.readSocket(s)
 	w.handler.OnAccept(c)
+	time.Sleep(100 * time.Millisecond)
+	go w.readSocket(s)
 }
 
 func (w *SocketServer) onClose(s api.Socket) {
