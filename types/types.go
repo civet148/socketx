@@ -14,6 +14,7 @@ const (
 
 const (
 	PACK_FRAGMENT_MAX = 1500
+	TCP_FRAGMENT_MAX  = 1024 * 1024
 )
 
 const (

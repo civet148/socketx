@@ -88,7 +88,7 @@ func (s *socket) Recv(length int) (msg *api.SockMessage, err error) {
 	var recv, left int
 	if length <= 0 {
 		once = true
-		length = types.PACK_FRAGMENT_MAX
+		length = types.TCP_FRAGMENT_MAX
 	}
 	left = length
 	data := s.makeBuffer(length)
